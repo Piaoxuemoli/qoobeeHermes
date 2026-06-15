@@ -1,0 +1,129 @@
+# 训练监控配置（模板）
+# 复制为 config.local.yaml 并填入真实值，config.local.yaml 不提交 git
+
+# 任务参数（从监控页面 URL 获取）
+task_id: ""
+task_uuid: ""
+team_id: ""
+domain_id: ""
+exp_id: ""
+
+# 认证 token（从浏览器 cookie kaiwu-token 获取）
+token: ""
+
+# 当前赛段: 初赛 | 区域赛 | 全国决赛
+competition_stage: 区域赛
+
+# 按分析场景分组的指标
+metric_groups:
+  quick_check:
+    - name: win_rate
+      expr: "round(avg(kaiwu_win_rate{model_id=\"selfplay\"}) by (model_id), 0.01)"
+    - name: reward
+      expr: "round(avg(kaiwu_reward{}), 0.01)"
+    - name: total_loss
+      expr: "round(avg(kaiwu_total_loss{}), 0.01)"
+    - name: train_step
+      expr: "round(avg(kaiwu_train_step{}), 1)"
+  reward_analysis:
+    - name: reward_sum
+      expr: "round(avg(kaiwu_reward_sum{}), 0.01)"
+    - name: reward_hp
+      expr: "round(avg(kaiwu_reward_hp{}), 0.01)"
+    - name: reward_tower
+      expr: "round(avg(kaiwu_reward_tower{}), 0.01)"
+    - name: reward_econ
+      expr: "round(avg(kaiwu_reward_econ{}), 0.01)"
+    - name: reward_combat
+      expr: "round(avg(kaiwu_reward_combat{}), 0.01)"
+  loss_analysis:
+    - name: value_loss_hp
+      expr: "round(avg(kaiwu_value_loss_hp{}), 0.01)"
+    - name: value_loss_tower
+      expr: "round(avg(kaiwu_value_loss_tower{}), 0.01)"
+    - name: value_loss_econ
+      expr: "round(avg(kaiwu_value_loss_econ{}), 0.01)"
+    - name: value_loss_combat
+      expr: "round(avg(kaiwu_value_loss_combat{}), 0.01)"
+    - name: policy_loss
+      expr: "round(avg(kaiwu_policy_loss{}), 0.01)"
+    - name: entropy_loss
+      expr: "round(avg(kaiwu_entropy_loss{}), 0.01)"
+  convergence:
+    - name: episode_win_value
+      expr: "round(avg(kaiwu_episode_win_value{}), 0.0001)"
+    - name: grad_norm
+      expr: "round(avg(kaiwu_grad_norm{}), 0.0001)"
+    - name: entropy_beta
+      expr: "round(avg(kaiwu_entropy_beta{}), 0.000001)"
+  environment:
+    - name: self_tower_hp
+      expr: "round(avg(kaiwu_self_tower_hp{model_id=\"selfplay\"}) by (model_id), 0.01)"
+    - name: enemy_tower_hp
+      expr: "round(avg(kaiwu_enemy_tower_hp{model_id=\"selfplay\"}) by (model_id), 0.01)"
+    - name: kill
+      expr: "round(avg(kaiwu_kill{model_id=\"selfplay\"}) by (model_id), 0.01)"
+    - name: death
+      expr: "round(avg(kaiwu_death{model_id=\"selfplay\"}) by (model_id), 0.01)"
+    - name: frame
+      expr: "round(avg(kaiwu_frame{model_id=\"selfplay\"}) by (model_id), 0.01)"
+  # 评估与对位（引擎 monitor_builder 暴露：eval 胜率 / 英雄召唤师胜率 / 跨英雄对位）
+  eval_analysis:
+    - name: eval_luban_win_rate
+      expr: "round(avg(kaiwu_eval_luban_win_rate{}), 0.0001)"
+    - name: eval_direnjie_win_rate
+      expr: "round(avg(kaiwu_eval_direnjie_win_rate{}), 0.0001)"
+    - name: luban_summoner_win_rate
+      expr: "round(avg(kaiwu_luban_summoner_win_rate{}), 0.0001)"
+    - name: direnjie_summoner_win_rate
+      expr: "round(avg(kaiwu_direnjie_summoner_win_rate{}), 0.0001)"
+    - name: direnjie_vs_luban_win_rate
+      expr: "round(avg(kaiwu_direnjie_vs_luban_win_rate{}), 0.0001)"
+    - name: luban_vs_direnjie_win_rate
+      expr: "round(avg(kaiwu_luban_vs_direnjie_win_rate{}), 0.0001)"
+  # 技能使用（引擎新增：施放次数 / 命中率 / 放空率，用于判断"乱放"是否收敛）
+  skill_usage:
+    - name: skill_cast_rate
+      expr: "round(avg(kaiwu_skill_cast_rate{}), 0.01)"
+    - name: skill_hit_rate
+      expr: "round(avg(kaiwu_skill_hit_rate{}), 0.0001)"
+    - name: skill_whiff_rate
+      expr: "round(avg(kaiwu_skill_whiff_rate{}), 0.0001)"
+
+# 异常检测（cron 用）
+auto_trigger:
+  enabled: true
+  check_interval: "30m"
+  failure_conditions:
+    - metric: reward
+      condition: "drop > 50%"
+      window: "1h"
+    - metric: total_loss
+      condition: "spike > 10x"
+    - metric: win_rate
+      condition: "flat > 4h"
+    # 评估胜率持续走低
+    - metric: eval_luban_win_rate
+      condition: "drop > 30%"
+      window: "4h"
+    - metric: eval_direnjie_win_rate
+      condition: "drop > 30%"
+      window: "4h"
+    # 多头价值不均衡：tower 头 value_loss 飙高
+    - metric: value_loss_tower
+      condition: "spike > 8x"
+    # 技能乱放未收敛：放空率维持高位
+    - metric: skill_whiff_rate
+      condition: "high > 0.5"
+    # 关键指标高波动（震荡）
+    - metric: reward_sum
+      condition: "oscillate > 0.8"
+      window: "2h"
+    - metric: policy_loss
+      condition: "oscillate > 1.0"
+      window: "2h"
+
+# 绘图
+plot:
+  time_range: "6h"
+  output_dir: "/tmp/monitor_charts"

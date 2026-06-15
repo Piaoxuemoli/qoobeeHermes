@@ -1,0 +1,109 @@
+auto_trigger:
+  check_interval: 30m
+  enabled: true
+  failure_conditions:
+  - condition: drop > 50%
+    metric: reward
+    window: 1h
+  - condition: spike > 10x
+    metric: total_loss
+  - condition: flat > 4h
+    metric: win_rate
+  - condition: drop > 30%
+    metric: eval_luban_win_rate
+    window: 4h
+  - condition: drop > 30%
+    metric: eval_direnjie_win_rate
+    window: 4h
+  - condition: spike > 8x
+    metric: value_loss_tower
+  - condition: high > 0.5
+    metric: skill_whiff_rate
+  - condition: oscillate > 0.8
+    metric: reward_sum
+    window: 2h
+  - condition: oscillate > 1.0
+    metric: policy_loss
+    window: 2h
+competition_stage: 区域赛
+domain_id: '444'
+exp_id: '11425'
+metric_groups:
+  convergence:
+  - expr: round(avg(kaiwu_episode_win_value{}), 0.0001)
+    name: episode_win_value
+  - expr: round(avg(kaiwu_grad_norm{}), 0.0001)
+    name: grad_norm
+  - expr: round(avg(kaiwu_entropy_beta{}), 0.000001)
+    name: entropy_beta
+  environment:
+  - expr: round(avg(kaiwu_self_tower_hp{model_id="selfplay"}) by (model_id), 0.01)
+    name: self_tower_hp
+  - expr: round(avg(kaiwu_enemy_tower_hp{model_id="selfplay"}) by (model_id), 0.01)
+    name: enemy_tower_hp
+  - expr: round(avg(kaiwu_kill{model_id="selfplay"}) by (model_id), 0.01)
+    name: kill
+  - expr: round(avg(kaiwu_death{model_id="selfplay"}) by (model_id), 0.01)
+    name: death
+  - expr: round(avg(kaiwu_frame{model_id="selfplay"}) by (model_id), 0.01)
+    name: frame
+  eval_analysis:
+  - expr: round(avg(kaiwu_eval_luban_win_rate{}), 0.0001)
+    name: eval_luban_win_rate
+  - expr: round(avg(kaiwu_eval_direnjie_win_rate{}), 0.0001)
+    name: eval_direnjie_win_rate
+  - expr: round(avg(kaiwu_luban_summoner_win_rate{}), 0.0001)
+    name: luban_summoner_win_rate
+  - expr: round(avg(kaiwu_direnjie_summoner_win_rate{}), 0.0001)
+    name: direnjie_summoner_win_rate
+  - expr: round(avg(kaiwu_direnjie_vs_luban_win_rate{}), 0.0001)
+    name: direnjie_vs_luban_win_rate
+  - expr: round(avg(kaiwu_luban_vs_direnjie_win_rate{}), 0.0001)
+    name: luban_vs_direnjie_win_rate
+  loss_analysis:
+  - expr: round(avg(kaiwu_value_loss_hp{}), 0.01)
+    name: value_loss_hp
+  - expr: round(avg(kaiwu_value_loss_tower{}), 0.01)
+    name: value_loss_tower
+  - expr: round(avg(kaiwu_value_loss_econ{}), 0.01)
+    name: value_loss_econ
+  - expr: round(avg(kaiwu_value_loss_combat{}), 0.01)
+    name: value_loss_combat
+  - expr: round(avg(kaiwu_policy_loss{}), 0.01)
+    name: policy_loss
+  - expr: round(avg(kaiwu_entropy_loss{}), 0.01)
+    name: entropy_loss
+  quick_check:
+  - expr: round(avg(kaiwu_win_rate{model_id="selfplay"}) by (model_id), 0.01)
+    name: win_rate
+  - expr: round(avg(kaiwu_reward{}), 0.01)
+    name: reward
+  - expr: round(avg(kaiwu_total_loss{}), 0.01)
+    name: total_loss
+  - expr: round(avg(kaiwu_train_step{}), 1)
+    name: train_step
+  reward_analysis:
+  - expr: round(avg(kaiwu_reward_sum{}), 0.01)
+    name: reward_sum
+  - expr: round(avg(kaiwu_reward_hp{}), 0.01)
+    name: reward_hp
+  - expr: round(avg(kaiwu_reward_tower{}), 0.01)
+    name: reward_tower
+  - expr: round(avg(kaiwu_reward_econ{}), 0.01)
+    name: reward_econ
+  - expr: round(avg(kaiwu_reward_combat{}), 0.01)
+    name: reward_combat
+  skill_usage:
+  - expr: round(avg(kaiwu_skill_cast_rate{}), 0.01)
+    name: skill_cast_rate
+  - expr: round(avg(kaiwu_skill_hit_rate{}), 0.0001)
+    name: skill_hit_rate
+  - expr: round(avg(kaiwu_skill_whiff_rate{}), 0.0001)
+    name: skill_whiff_rate
+plot:
+  output_dir: /tmp/monitor_charts
+  time_range: 6h
+task_id: '189696'
+task_uuid: 57738cce-5bfb-4183-8ab2-37b57bb407cb
+team_id: '7203'
+token: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3ODA0MDc2MTIuNDM3Nzg5LCJpYXQiOjE3Nzk4MDI4MTIuNDM3Nzg5LCJpc3MiOiJrYWl3dSIsImN1c3RvbSI6MTU4NTB9.jRUdE33l9T9_ElYmBVkIeoZqGXbyiXyoNmh4h4yw5w7guOQhYneNsjLUKqPt-pYGbxwFmsAgU5qXXc9SLIpBxA

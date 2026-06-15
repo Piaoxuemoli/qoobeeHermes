@@ -1,0 +1,9 @@
+{
+  "last_report_path": "/root/.hermes/logs/curator/20260614-151347",
+  "last_run_at": "2026-06-14T15:13:47.233221+00:00",
+  "last_run_duration_seconds": 88.683976,
+  "last_run_summary": "auto: no changes; llm: ## Curator Pass Complete — No Consolidations\n\n**Candidate set:** 3 agent-created skills (all non-pinned).\n\n| Skill | Category | Purpose |\n|-------|----------|---------|\n| `defense-docs` | kaiwu | Technical writing for 答辩材料 (defense/presenta…",
+  "last_run_summary_shown_at": null,
+  "paused": false,
+  "run_count": 3
+}

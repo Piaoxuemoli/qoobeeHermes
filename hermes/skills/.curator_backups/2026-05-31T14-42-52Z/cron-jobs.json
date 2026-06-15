@@ -1,0 +1,95 @@
+{
+  "jobs": [
+    {
+      "id": "e55a0d5dbb2d",
+      "name": "kaiwu-daily-sync",
+      "prompt": "\u6267\u884c\u4ed3\u5e93\u6bcf\u65e5\u540c\u6b65\u6d41\u7a0b\u3002\n\n\u6b65\u9aa4\uff1a\n1. \u5728 /root/Kaiwu_2026 \u76ee\u5f55\u4e0b\u6267\u884c git fetch origin\n2. \u68c0\u67e5\u672c\u5730\u672a\u63d0\u4ea4\u6539\u52a8\uff08git status --porcelain\uff09\uff0c\u6709\u6539\u52a8\u5219 git stash\n3. \u68c0\u67e5\u672c\u5730 vs origin/dev \u5dee\u5f02\uff08git rev-list --count\uff09\uff0c\u843d\u540e\u5219 git pull --rebase origin dev\n4. \u5982\u679c\u4e4b\u524d\u505a\u4e86 stash\uff0c\u5c1d\u8bd5 git stash pop\uff0c\u6709\u51b2\u7a81\u5219\u62a5\u544a\n5. \u5982\u679c\u6709\u65b0\u62c9\u53d6\u7684 commit\uff0c\u68c0\u67e5\u662f\u5426\u9700\u8981\u66f4\u65b0 wiki\n6. \u6700\u540e\u7528 send_message \u5de5\u5177\u53d1\u9001\u901a\u77e5\u5230\u98de\u4e66\u7fa4\u804a\n\n\u901a\u77e5\u683c\u5f0f\uff1a\n\ud83d\udce6 \u4ed3\u5e93\u540c\u6b65\u5b8c\u6210\n\u5206\u652f: dev\n\u8fdc\u7a0b\u65b0\u63d0\u4ea4: N \u4e2a\n\u672c\u5730\u672a\u63a8\u9001: N \u4e2a\n\u72b6\u6001: \u5df2\u662f\u6700\u65b0 / \u5df2\u62c9\u53d6 / \u6709\u51b2\u7a81\n\u6700\u65b0\u63d0\u4ea4: (\u5217 3-5 \u6761)\n\n\u5373\u4f7f\u662f\"\u5df2\u662f\u6700\u65b0\"\u4e5f\u8981\u53d1\u4e00\u6761\u7b80\u77ed\u901a\u77e5\u3002\u6709\u51b2\u7a81\u5fc5\u987b\u544a\u8b66\u3002",
+      "skills": [
+        "kaiwu/repo-sync"
+      ],
+      "skill": "kaiwu/repo-sync",
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 9 * * *",
+        "display": "0 9 * * *"
+      },
+      "schedule_display": "0 9 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 6
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-05-26T01:58:00.185665+08:00",
+      "next_run_at": "2026-06-01T09:00:00+08:00",
+      "last_run_at": "2026-05-31T09:02:03.986828+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "origin",
+      "origin": {
+        "platform": "feishu",
+        "chat_id": "oc_8ce246fa37c8b15f1045f42e8e6a15fe",
+        "chat_name": "Qoobee Team",
+        "thread_id": null
+      },
+      "enabled_toolsets": null,
+      "workdir": "/root/Kaiwu_2026",
+      "profile": null
+    },
+    {
+      "id": "677368ad4db0",
+      "name": "kaiwu-training-monitor",
+      "prompt": "\u4f60\u662f Kaiwu_2026 \u8bad\u7ec3\u76d1\u63a7\u81ea\u52a8\u5206\u6790\u4efb\u52a1\u3002\u6240\u6709\u811a\u672c\u5728 skill \u7684 scripts/ \u76ee\u5f55\u4e0b\u8fd0\u884c\u3002\n\n\u6267\u884c\u6b65\u9aa4\uff1a\n1. \u8fd0\u884c `cd ~/.hermes/skills/kaiwu/monitor-analyzer/scripts && python3 fetch.py --hours 6 --format structured` \u83b7\u53d6\u6570\u636e\n2. \u8fd0\u884c `python3 check.py --json` \u68c0\u67e5\u5f02\u5e38\n3. \u8fd0\u884c `python3 plot.py --hours 6` \u751f\u6210\u56fe\u8868\n4. \u8fd0\u884c `python3 report.py --json --since 72h` \u83b7\u53d6\u957f\u671f\u8d8b\u52bf\u548c\u7ed3\u6784\u5316\u8bca\u65ad\n5. \u8bfb\u53d6 reference.md \u7684\u6307\u6807\u89e3\u8bfb\u6846\u67b6\u548c\u75c7\u72b6\u2192\u52a8\u4f5c\u51b3\u7b56\u8868\n6. \u8bfb\u53d6 conf.py \u6743\u91cd\uff08\u533a\u57df\u8d5b/\u5de5\u7a0b/agent_ppo/conf/conf.py\uff09\n7. \u6309 reference.md \u7684\u98de\u4e66\u8f93\u51fa\u6a21\u677f\u7ec4\u88c5\u5206\u6790\uff08\u4e0d\u7528\u8868\u683c\uff09\uff0c\u56fe\u7247\u7528 MEDIA: \u524d\u7f00\u5d4c\u5165\n\n\u91cd\u70b9\uff1a\n- \u5bf9\u7167 conf.py \u6743\u91cd\u89e3\u91ca\u5404 reward \u5b50\u9879\u8d21\u732e\n- \u7ed3\u5408 report.py \u7684 findings\uff08severity \u6392\u5e8f\uff09\u7ed9\u51fa\u53ef\u64cd\u4f5c\u5efa\u8bae\n- \u533a\u5206\u6b63\u5e38\u6ce2\u52a8\u548c\u771f\u6b63\u5f02\u5e38\uff08selfplay \u4e0b\u770b\u80dc\u7387\u800c\u975e reward_sum\uff09\n- \u5217\u51fa eval \u80dc\u7387\u548c\u6280\u80fd\u4f7f\u7528\u60c5\u51b5",
+      "skills": [
+        "kaiwu/monitor-analyzer"
+      ],
+      "skill": "kaiwu/monitor-analyzer",
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 9,12,15,18,21 * * *",
+        "display": "0 9,12,15,18,21 * * *"
+      },
+      "schedule_display": "0 9,12,15,18,21 * * *",
+      "repeat": {
+        "times": null,
+        "completed": 23
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-05-28T17:55:11.750261+08:00",
+      "next_run_at": "2026-06-01T09:00:00+08:00",
+      "last_run_at": "2026-05-31T21:03:51.964041+08:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "feishu",
+      "origin": {
+        "platform": "feishu",
+        "chat_id": "oc_8ce246fa37c8b15f1045f42e8e6a15fe",
+        "chat_name": "Qoobee Team",
+        "thread_id": null
+      },
+      "enabled_toolsets": null,
+      "workdir": null,
+      "profile": null
+    }
+  ],
+  "updated_at": "2026-05-31T21:03:51.964816+08:00"
+}

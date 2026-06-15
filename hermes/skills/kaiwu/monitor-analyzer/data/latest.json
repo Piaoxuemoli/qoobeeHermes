@@ -1,0 +1,168 @@
+{
+  "code": 0,
+  "msg": "success",
+  "data": {
+    "results": [
+      {
+        "id": "win_rate_0",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "reward_1",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "total_loss_2",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "train_step_3",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "reward_sum_4",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "reward_hp_5",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "reward_tower_6",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "reward_econ_7",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "reward_combat_8",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "value_loss_hp_9",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "value_loss_tower_10",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "value_loss_econ_11",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "value_loss_combat_12",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "policy_loss_13",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "entropy_loss_14",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "episode_win_value_15",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "grad_norm_16",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "entropy_beta_17",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "self_tower_hp_18",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "enemy_tower_hp_19",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "kill_20",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "death_21",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "frame_22",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "eval_luban_win_rate_23",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "eval_direnjie_win_rate_24",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "luban_summoner_win_rate_25",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "direnjie_summoner_win_rate_26",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "direnjie_vs_luban_win_rate_27",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "luban_vs_direnjie_win_rate_28",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "skill_cast_rate_29",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "skill_hit_rate_30",
+        "items": [],
+        "error_message": ""
+      },
+      {
+        "id": "skill_whiff_rate_31",
+        "items": [],
+        "error_message": ""
+      }
+    ]
+  }
+}
