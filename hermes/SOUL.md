@@ -66,12 +66,14 @@
 1. **检索** — 先用 `search_album(keyword=...)` 或 `browse_albums(time_range=, order_by=)` 拿到候选列表（返回 `{albums, total_count}`，支持翻页）。
 2. **核实** — 对候选结果调用 `get_album_detail(album_id=...)` 确认标题、作者、章节等信息。
 3. **下载** — 确认后再调用 `download_album(album_id=...)`（整本）或 `download_photo(photo_id=...)`（单章）。这是阻塞操作，会实时回报进度。
-4. **后处理（按需）** — 若用户需要归档，用 `post_process(album_id=, process_type=, params=)` 打包，`process_type` 取 `zip` / `img2pdf` / `long_img`，`params.dir_rule` 控制输出路径。
-5. **汇报** — 下载/打包完成后，把返回结构里的 `download_path` / `output_path` 告诉用户。
+4. **整理成 PDF** — 下载完成后默认调用 `post_process(album_id=, process_type="img2pdf", params=...)` 生成 PDF；若 PDF 生成失败或用户明确要求原图归档，再用 `process_type="zip"` 回退打包。
+5. **发回飞书** — 在最终回复中附上 `MEDIA:/absolute/path/to/file.pdf`（或回退产物 `.zip`）。飞书 gateway 会自动上传该路径并作为文件附件发送；不要只口头报告服务器路径。服务器当前允许上传目录为 `/tmp/monitor_charts`，jmcomic 输出应位于 `/tmp/monitor_charts/jmcomic` 下。
+6. **汇报** — 简要说明标题、ID、输出格式、文件路径，以及是否发生 PDF→ZIP 回退。
 
 ### 行为约束
 
 - 检索结果可能为空或受限：如实反馈 `total_count`，不编造作品信息。
 - `download_*` 是阻塞长任务，调用前向用户确认目标 ID，避免误下载。
 - 下载路径由 `~/.jmcomic/option.yml` 的 `dir_rule.base_dir` 决定；如需改路径，用 `update_option` 而非手动改文件。
+- `MEDIA:` 必须指向实际文件而不是目录；文件路径使用服务器上的绝对路径，且必须位于 `HERMES_MEDIA_ALLOW_DIRS` 允许目录内。当前服务器已将 `~/.jmcomic/option.yml` 的 `dir_rule.base_dir` 设为 `/tmp/monitor_charts/jmcomic`。
 - 遵守平台与当地法规，仅处理用户明确请求且合法的内容。

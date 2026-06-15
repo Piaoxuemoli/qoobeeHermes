@@ -13,9 +13,9 @@
 | Hermes MCP 接入机制 | ✅ 已核实 | `hermes/skills/mcp/native-mcp/SKILL.md` 是权威手册 |
 | 服务器环境探测 | ✅ 完成 | Python 3.11.6 / `python3`+`pip3` 可用 / `mcp` 包**未装** / config 无 `mcp_servers` 段 |
 | **编写本交接文档** | ✅ 本文件 | |
-| SOUL.md 注入工具 SOP | ⬜ 待执行 | 见下方第 2 节 |
-| 服务器安装 + 配置 | ⬜ 待执行 | 见下方第 3 节 |
-| 验证 + 提交 | ⬜ 待执行 | 见下方第 4、5 节 |
+| SOUL.md 注入工具 SOP | ✅ 已完成 | 已加入 PDF 优先回传 SOP |
+| 服务器安装 + 配置 | ✅ 已完成 | `jmai 0.0.9` + `mcp_servers.jmcomic` |
+| 验证 + 提交 | ✅ 已完成 | MCP 测试 + 飞书 PDF `MEDIA:` 附件冒烟通过 |
 
 ---
 
@@ -50,6 +50,19 @@
 - **jmcomic-ai 的配置**：`~/.jmcomic/option.yml`（不存在则首次运行自动生成默认值）。优先级：CLI `--option` > 环境变量 `JM_OPTION_PATH` > 默认路径。
 - **Hermes 的配置**：`~/.hermes/config.yaml`（服务器 `/root/.hermes/config.yaml`），在此追加 `mcp_servers` 段。
 
+### 1.3 飞书文件回传策略
+
+Hermes gateway 会扫描最终回复中的 `MEDIA:/absolute/path/file.ext`，自动把本地文件上传到当前飞书会话。Feishu adapter 支持 `send_document`，`.pdf/.doc/.xls/.ppt` 走对应文档类型，其它文件（如 `.zip`）走通用 `stream` 文件上传。
+
+因此漫画交付默认流程为：
+
+1. `download_album(album_id=...)`
+2. `post_process(album_id=..., process_type="img2pdf", params=...)`
+3. 最终回复写入 `MEDIA:/root/.../album.pdf`
+4. 若 PDF 失败，再 `post_process(..., process_type="zip")` 并回传 `.zip`
+
+关键限制：`MEDIA:` 必须指向实际文件，不能指向目录；路径必须是服务器上的绝对路径，且要位于 Hermes 允许上传目录内。当前服务器 `HERMES_MEDIA_ALLOW_DIRS=/tmp/monitor_charts`，jmcomic 输出目录已设为 `/tmp/monitor_charts/jmcomic`。
+
 ---
 
 ## 2. 第一步：把工具 SOP 注入 Hermes 的 SOUL.md
@@ -73,14 +86,16 @@
 1. **检索** — 先用 `search_album(keyword=...)` 或 `browse_albums(time_range=, order_by=)` 拿到候选列表（返回 `{albums, total_count}`，支持翻页）。
 2. **核实** — 对候选结果调用 `get_album_detail(album_id=...)` 确认标题、作者、章节等信息。
 3. **下载** — 确认后再调用 `download_album(album_id=...)`（整本）或 `download_photo(photo_id=...)`（单章）。这是阻塞操作，会实时回报进度。
-4. **后处理（按需）** — 若用户需要归档，用 `post_process(album_id=, process_type=, params=)` 打包，`process_type` 取 `zip` / `img2pdf` / `long_img`，`params.dir_rule` 控制输出路径。
-5. **汇报** — 下载/打包完成后，把返回结构里的 `download_path` / `output_path` 告诉用户。
+4. **整理成 PDF** — 下载完成后默认调用 `post_process(album_id=, process_type="img2pdf", params=...)` 生成 PDF；若 PDF 生成失败或用户明确要求原图归档，再用 `process_type="zip"` 回退打包。
+5. **发回飞书** — 在最终回复中附上 `MEDIA:/absolute/path/to/file.pdf`（或回退产物 `.zip`）。飞书 gateway 会自动上传该路径并作为文件附件发送；不要只口头报告服务器路径。服务器当前允许上传目录为 `/tmp/monitor_charts`，jmcomic 输出应位于 `/tmp/monitor_charts/jmcomic` 下。
+6. **汇报** — 简要说明标题、ID、输出格式、文件路径，以及是否发生 PDF→ZIP 回退。
 
 ### 行为约束
 
 - 检索结果可能为空或受限：如实反馈 `total_count`，不编造作品信息。
 - `download_*` 是阻塞长任务，调用前向用户确认目标 ID，避免误下载。
 - 下载路径由 `~/.jmcomic/option.yml` 的 `dir_rule.base_dir` 决定；如需改路径，用 `update_option` 而非手动改文件。
+- `MEDIA:` 必须指向实际文件而不是目录；文件路径使用服务器上的绝对路径，且必须位于 `HERMES_MEDIA_ALLOW_DIRS` 允许目录内。当前服务器已将 `~/.jmcomic/option.yml` 的 `dir_rule.base_dir` 设为 `/tmp/monitor_charts/jmcomic`。
 - 遵守平台与当地法规，仅处理用户明确请求且合法的内容。
 ```
 
@@ -115,13 +130,14 @@ ssh -i "C:/Users/Qoobeewang/Desktop/qoobeeHermes/hermesqoobee.pem" -o StrictHost
 ssh -i "C:/Users/Qoobeewang/Desktop/qoobeeHermes/hermesqoobee.pem" -o StrictHostKeyChecking=no root@43.156.230.108 "jmai option show || true; ls -la /root/.jmcomic/option.yml"
 ```
 
-如需自定义下载目录（默认在运行目录），编辑 `option.yml` 的 `dir_rule.base_dir`：
+如需自定义下载目录，编辑 `option.yml` 的 `dir_rule.base_dir`。为了让飞书 `MEDIA:` 附件回传通过安全过滤，当前建议值是 `/tmp/monitor_charts/jmcomic`：
 
 ```bash
 ssh -i "C:/Users/Qoobeewang/Desktop/qoobeeHermes/hermesqoobee.pem" -o StrictHostKeyChecking=no root@43.156.230.108 "jmai option edit"
 ```
 
 > Windows 端无法用 `notepad`，`jmai option edit` 在服务器会调 `vi`/`nano`。若要非交互式改，用 `update_option` 工具或直接 `sed`。
+> 修改 `option.yml` 后需要 reload/restart jmcomic MCP server，确保新下载目录被重新加载。
 
 ### 3.3 在 Hermes 配置里注册 MCP server
 
@@ -273,6 +289,7 @@ git push
 | Hermes 日志 | `/root/.hermes/logs/*.log` |
 | Hermes MCP 手册 | 仓库内 `hermes/skills/mcp/native-mcp/SKILL.md` |
 | jmcomic-ai 配置 | `/root/.jmcomic/option.yml`（首运行自动生成） |
+| jmcomic 输出目录 | `/tmp/monitor_charts/jmcomic`（位于 `HERMES_MEDIA_ALLOW_DIRS=/tmp/monitor_charts` 下，可被飞书 `MEDIA:` 上传） |
 | 服务器 Python | 3.11.6，命令名 `python3`（无 `python`），`pip3` 可用 |
 | 服务器缺失包 | `mcp`、`jmcomic-ai`（都需 pip 安装）；`uvx`/`jmai` 未装 |
 | MCP server 启动 | `jmai mcp stdio`（stdio 传输） |
@@ -287,10 +304,10 @@ git push
 
 ## 8. 风险与注意事项
 
-1. **无热重载**：改 `mcp_servers` 后必须重启 Hermes，否则不生效。
+1. **MCP 生效方式**：优先使用 `/reload-mcp` 轻量重载；若工具未出现，再重启 Hermes gateway。
 2. **`command` 路径**：服务器无 `python`，若 `jmai` 装在用户级 `~/.local/bin` 不在非交互 SSH 的 PATH，需用绝对路径（`/usr/local/bin/jmai` 或 `command: "python3", args: ["-m","jmcomic_ai.cli","mcp","stdio"]`）。验证用 `which jmai`。
 3. **网络可达性**：jmcomic 站点在国内/外访问差异大，`option.yml` 的 `client.impl`（`html`/`api`）和 `proxies` 可能需调。若检索失败，先查 `client.domain` 列表和代理。
 4. **SOUL.md 措辞**：注入内容已用中性技术语言（"数字漫画检索"），避免敏感词触发内容过滤。
 5. **不要把 `hermesqoobee.pem` 或 `option.yml`（可能含 cookie）提交到 GitHub**。`.gitignore` 已覆盖 `*.pem` 和 `.env`，但 `option.yml` 不在忽略列表——提交前复核 `git status`。
 6. **Gateway 会随 SSH 退出而死**（`hermes-agent/SKILL.md` 故障排查段）。若 gateway 非 systemd 托管，前台 `hermes gateway run` 重启会在 SSH 断开后停摆，连带飞书 gateway 与每日 cron 报废。先 `sudo loginctl enable-linger root`，再走 systemd/`hermes gateway restart`；崩溃循环用 `systemctl --user reset-failed hermes-gateway` 清状态。
-7. **`/reload-mcp` 与文档口径冲突**：`native-mcp/SKILL.md` 第 357 行称「no hot-reload，需重启」，但 `hermes-agent/SKILL.md` 第 284 行与 config 的 `mcp_reload_confirm` 都证实有运行时重载。优先试 `/reload-mcp`，工具未出现再重启——别因「文档说必须重启」就直接重启飞书 gateway 造成中断。
+7. **下载工具 stdout 污染风险**：`jmcomic-ai` 的下载日志可能写到 stdout，污染 MCP JSON-RPC 流。若下载成功但 Hermes 报 JSON parse warning，优先改用 PDF/ZIP 后处理产物回传；必要时为 `jmai mcp stdio` 增加包装脚本，把非 JSON 日志重定向到 stderr/文件。
