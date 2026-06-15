@@ -125,7 +125,17 @@ ssh -i "C:/Users/Qoobeewang/Desktop/qoobeeHermes/hermesqoobee.pem" -o StrictHost
 
 ### 3.3 在 Hermes 配置里注册 MCP server
 
-`/root/.hermes/config.yaml` 当前**没有** `mcp_servers` 段。需追加（YAML 顶层）：
+`/root/.hermes/config.yaml` 当前**没有** `mcp_servers` 段（已通读整个 config.yaml 确认；`platform_toolsets` 仅 `cli→hermes-cli`、`feishu→hermes-feishu`）。
+
+**推荐做法（用 Hermes 自带 CLI，避免手写 YAML）**：仓库 `hermes/skills/autonomous-ai-agents/hermes-agent/SKILL.md` 第 130–139 行提供 `hermes mcp` 子命令：
+
+```bash
+ssh -i "C:/Users/Qoobeewang/Desktop/qoobeeHermes/hermesqoobee.pem" -o StrictHostKeyChecking=no root@43.156.230.108 "hermes mcp add jmcomic --command jmai --args 'mcp stdio' && hermes mcp list"
+```
+
+> `hermes mcp add` 的 `--args` 具体语法（单串 `'mcp stdio'` vs 多次 `--args mcp --args stdio`）以服务器上 `hermes mcp add --help` 为准；不确定就改用下方「已验证的手动方法」。注册后用 `hermes mcp test jmcomic` 验证连接、`hermes mcp list` 复核。
+
+**已验证的手动方法（Python 注入，先备份再用 yaml 库写，不破坏现有 YAML）**——需追加（YAML 顶层）：
 
 ```yaml
 mcp_servers:
@@ -180,15 +190,37 @@ ssh -i "C:/Users/Qoobeewang/Desktop/qoobeeHermes/hermesqoobee.pem" -o StrictHost
 scp -i "C:/Users/Qoobeewang/Desktop/qoobeeHermes/hermesqoobee.pem" -o StrictHostKeyChecking=no "C:/Users/Qoobeewang/Desktop/qoobeeHermes/hermes/SOUL.md" root@43.156.230.108:/root/.hermes/SOUL.md
 ```
 
-### 4.2 重启 Hermes（MCP 无热重载，必须重启）
+### 4.2 让 MCP server 生效（先热重载，不行再重启）
 
-Hermes 进程管理方式需先确认。先探查：
+改完 `mcp_servers` 后需让 Hermes 重新发现工具。**先试轻量重载，不行再重启**：
 
-```bash
-ssh -i "C:/Users/Qoobeewang/Desktop/qoobeeHermes/hermesqoobee.pem" -o StrictHostKeyChecking=no root@43.156.230.108 "systemctl list-units --type=service | grep -i hermes; ps aux | grep -i hermes | grep -v grep; cat /root/.hermes/gateway.pid 2>/dev/null"
+**方式 A（首选，会话内热重载）**：Hermes 内置 `/reload-mcp` 斜杠命令（仓库 `hermes-agent/SKILL.md` 第 284 行），可在不重启进程的情况下重新加载 MCP server。`config.yaml` 里 `approvals.mcp_reload_confirm: true` 说明该操作默认需确认。在飞书/CLI 会话里直接发：
+
+```
+/reload-mcp
 ```
 
-根据探测结果，重启方式可能是 `systemctl restart hermes`（若有 service）或重启 gateway 进程。若不确定，**先问用户** Hermes 怎么启动，不要盲目 kill。
+> ⚠️ 口径冲突：`hermes/skills/mcp/native-mcp/SKILL.md` 第 357 行写的是「no hot-reload currently，需重启」，这处文档偏旧——`/reload-mcp` 与 config 的 `mcp_reload_confirm` 都证实有运行时重载。**优先试 `/reload-mcp`**；若工具仍未出现，落到方式 B/C。别因「文档说必须重启」就直接重启飞书 gateway 造成中断。
+
+**方式 B（CLI 重启 gateway 服务）**：
+
+```bash
+ssh -i "C:/Users/Qoobeewang/Desktop/qoobeeHermes/hermesqoobee.pem" -o StrictHostKeyChecking=no root@43.156.230.108 "hermes gateway restart && sleep 3 && hermes gateway status"
+```
+
+**方式 C（systemd）**：若 gateway 由 `hermes gateway install` 装成 systemd 服务（单元名 `hermes-gateway`，见 `webhook-subscriptions/SKILL.md` 第 54 行）：
+
+```bash
+ssh -i "C:/Users/Qoobeewang/Desktop/qoobeeHermes/hermesqoobee.pem" -o StrictHostKeyChecking=no root@43.156.230.108 "systemctl restart hermes-gateway 2>/dev/null || systemctl --user restart hermes-gateway; sleep 3; systemctl status hermes-gateway --no-pager 2>/dev/null || systemctl --user status hermes-gateway --no-pager"
+```
+
+**先探查再决定**（确认 gateway 当前怎么跑的、是否 systemd 托管）：
+
+```bash
+ssh -i "C:/Users/Qoobeewang/Desktop/qoobeeHermes/hermesqoobee.pem" -o StrictHostKeyChecking=no root@43.156.230.108 "systemctl list-units --type=service | grep -i hermes; systemctl --user list-units --type=service 2>/dev/null | grep -i hermes; ps aux | grep -iE 'hermes.*gateway|gateway.*hermes' | grep -v grep"
+```
+
+> **关键风险——别用前台 `hermes gateway run` 重启**：`hermes-agent/SKILL.md` 故障排查段明确警告「Gateway dies on SSH logout」。若 gateway 不是 systemd 托管、且未开 linger（`sudo loginctl enable-linger root`），SSH 断开后前台进程会一起死，连带飞书 gateway 与 `hermes/cron/jobs.json` 里每日 09:00 的「世界杯每日赛果报告」（`last_status: ok`）一起停摆。**若探查发现是 nohup/前台进程，先 `loginctl enable-linger root`，再迁到 systemd 或 tmux 守护，不要盲目 kill。**
 
 ---
 
@@ -207,6 +239,15 @@ ssh -i "C:/Users/Qoobeewang/Desktop/qoobeeHermes/hermesqoobee.pem" -o StrictHost
 ```bash
 ssh -i "C:/Users/Qoobeewang/Desktop/qoobeeHermes/hermesqoobee.pem" -o StrictHostKeyChecking=no root@43.156.230.108 "jmai option path && jmai option show 2>&1 | head -20"
 ```
+
+Hermes 层验证（确认 MCP server 已注册并被 gateway 发现）：
+
+```bash
+ssh -i "C:/Users/Qoobeewang/Desktop/qoobeeHermes/hermesqoobee.pem" -o StrictHostKeyChecking=no root@43.156.230.108 "hermes mcp list && hermes mcp test jmcomic && hermes doctor 2>&1 | tail -25"
+```
+
+- `hermes mcp list` 应列出 `jmcomic`；`hermes mcp test jmcomic` 应连接成功并列出工具（`search_album`/`download_album` 等）；`hermes doctor` 复核依赖与配置。
+- 第 5 节那条 `*.log` glob 已覆盖重点日志文件 **`/root/.hermes/logs/gateway.log`**（`hermes-agent/SKILL.md` 第 870 行指明该精确路径）。
 
 ---
 
@@ -237,6 +278,12 @@ git push
 | MCP server 启动 | `jmai mcp stdio`（stdio 传输） |
 | Hermes 工具命名 | `mcp_jmcomic_{方法名}`（连字符/点→下划线） |
 | SSH 密钥 | `C:\Users\Qoobeewang\Desktop\qoobeeHermes\hermesqoobee.pem`（已收紧权限，勿提交） |
+| 注册 MCP 的 CLI | `hermes mcp add/list/test/remove/configure`（`hermes-agent/SKILL.md` 130–139 行） |
+| 让 MCP 生效 | 首选 `/reload-mcp`（会话内热重载，受 `approvals.mcp_reload_confirm: true` 约束）；不行则 `hermes gateway restart` 或 `systemctl restart hermes-gateway` |
+| Gateway 服务单元 | `hermes-gateway`（systemd，`hermes gateway install` 安装；CLI 见 `hermes gateway run/install/start/stop/restart/status`） |
+| Gateway 日志（精确） | `/root/.hermes/logs/gateway.log` |
+| 健康检查 | `hermes doctor`（依赖+配置）、`hermes config check`（配置缺失/过期） |
+| 现有 cron 依赖 gateway | `hermes/cron/jobs.json`：每日 09:00「世界杯每日赛果报告」→飞书（`last_status: ok`），重启 gateway 勿中断 |
 
 ## 8. 风险与注意事项
 
@@ -245,3 +292,5 @@ git push
 3. **网络可达性**：jmcomic 站点在国内/外访问差异大，`option.yml` 的 `client.impl`（`html`/`api`）和 `proxies` 可能需调。若检索失败，先查 `client.domain` 列表和代理。
 4. **SOUL.md 措辞**：注入内容已用中性技术语言（"数字漫画检索"），避免敏感词触发内容过滤。
 5. **不要把 `hermesqoobee.pem` 或 `option.yml`（可能含 cookie）提交到 GitHub**。`.gitignore` 已覆盖 `*.pem` 和 `.env`，但 `option.yml` 不在忽略列表——提交前复核 `git status`。
+6. **Gateway 会随 SSH 退出而死**（`hermes-agent/SKILL.md` 故障排查段）。若 gateway 非 systemd 托管，前台 `hermes gateway run` 重启会在 SSH 断开后停摆，连带飞书 gateway 与每日 cron 报废。先 `sudo loginctl enable-linger root`，再走 systemd/`hermes gateway restart`；崩溃循环用 `systemctl --user reset-failed hermes-gateway` 清状态。
+7. **`/reload-mcp` 与文档口径冲突**：`native-mcp/SKILL.md` 第 357 行称「no hot-reload，需重启」，但 `hermes-agent/SKILL.md` 第 284 行与 config 的 `mcp_reload_confirm` 都证实有运行时重载。优先试 `/reload-mcp`，工具未出现再重启——别因「文档说必须重启」就直接重启飞书 gateway 造成中断。
