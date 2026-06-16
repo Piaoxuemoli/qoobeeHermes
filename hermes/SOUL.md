@@ -77,3 +77,59 @@
 - 下载路径由 `~/.jmcomic/option.yml` 的 `dir_rule.base_dir` 决定；如需改路径，用 `update_option` 而非手动改文件。
 - `MEDIA:` 必须指向实际 PDF 文件而不是目录或 ZIP；文件路径使用服务器上的绝对路径，且必须位于 `HERMES_MEDIA_ALLOW_DIRS` 允许目录内。页数过多时会产生多个 PDF 分卷，需为每个分卷分别提供 `MEDIA:` 行。当前服务器已将 `~/.jmcomic/option.yml` 的 `dir_rule.base_dir` 设为 `/tmp/monitor_charts/jmcomic`，并通过 PDF-only MCP wrapper 禁止 ZIP 后处理回传。
 - 遵守平台与当地法规，仅处理用户明确请求且合法的内容。
+
+## 成电Wiki论坛演示项目（wiki.bbs.uestc.net）
+
+除上述职责外，你维护一个**纯静态演示站**「成电Wiki论坛」，用于展示该 BBS 的品牌方案（首页 + 品牌介绍）。这是一个 demo，**无后端、无真实登录/发帖**。
+
+### 项目简介
+
+基于《wiki.bbs.uestc.net 品牌设计小组汇报方案》制作的单页滚动演示站，覆盖品牌介绍（定位/价值观/品牌故事/IP/未来展望）与模拟 BBS 首页（五大板块 + 热门帖 + 侧栏）。技术栈：纯静态单文件 `index.html`，内联 CSS + 原生 JS，零依赖、零构建、零 CDN。
+
+### 文件与访问
+
+| 项 | 值 |
+|---|---|
+| 源文件（仓库） | `bbs-demo/index.html` |
+| 服务器目录 | `/opt/bbs-demo/` |
+| 访问地址 | `http://43.156.230.108:8081/` |
+| 设计文档 | `docs/superpowers/specs/2026-06-16-uestc-bbs-demo-design.md` |
+
+### 部署方式
+
+nginx 新增独立 server 块监听 **8081** 端口（避开世界杯的 8080 与 `/opt/colosseum` 的 docker 服务），`root` 指向 `/opt/bbs-demo`，`index index.html`。更新流程：
+
+```bash
+# 1. 上传
+scp -i hermesqoobee.pem -o StrictHostKeyChecking=no bbs-demo/index.html root@43.156.230.108:/opt/bbs-demo/
+# 2. 重载 nginx（无需重启）
+ssh -i hermesqoobee.pem root@43.156.230.108 'nginx -t && nginx -s reload'
+```
+
+nginx server 块参考（位于 `/etc/nginx/conf.d/bbs.conf`）：
+```nginx
+server {
+    listen 8081;
+    server_name _;
+    root /opt/bbs-demo;
+    index index.html;
+    location / { try_files $uri $uri/ =404; }
+}
+```
+
+> 云安全组需放行 8081 端口。
+
+### 配色规范（成电蓝白）
+
+| 角色 | 色值 |
+|---|---|
+| 成电蓝（主色） | `#003366` |
+| 深蓝（渐变端） | `#001f3f` |
+| 亮蓝（点缀） | `#1e6bb8` |
+| 白 | `#ffffff` |
+| 浅灰（分区背景） | `#f5f5f5` |
+| 科技银（描边） | `#e0e0e0` |
+
+### 动效说明
+
+纯 CSS keyframes + 原生 JS 实现，无动画库：Hero 浮动代码符号粒子、打字机广告语轮播、IntersectionObserver 滚动渐入、数字滚动计数、卡片悬停上浮发光、时间轴滚动绘制、导航毛玻璃滚动变实色。支持 `prefers-reduced-motion` 无障碍降级。

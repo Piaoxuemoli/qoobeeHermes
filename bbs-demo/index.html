@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>成电Wiki论坛 · 成电学子专属成长互助开源社区</title>
+<meta name="description" content="wiki.bbs.uestc.net — 打破信息壁垒，连接成电人，共建纯粹、干净、高信噪比的成长互助空间。">
+<style>
+/* ============================================================
+   成电Wiki论坛 演示站
+   主色：成电蓝 #003366 / 白 #ffffff
+   辅助：深蓝 #001f3f  亮蓝 #1e6bb8  浅灰 #f5f5f5  科技银 #e0e0e0
+   零依赖、零构建、零CDN
+   ============================================================ */
+
+:root{
+  --uestc:#003366;
+  --uestc-deep:#001f3f;
+  --uestc-light:#1e6bb8;
+  --white:#ffffff;
+  --gray-bg:#f5f5f5;
+  --gray-2:#eef2f6;
+  --silver:#e0e0e0;
+  --text:#1a2733;
+  --text-soft:#5a6b7b;
+  --line:#e6ebf1;
+  --accent:#7ee0ff;
+  --shadow:0 8px 30px rgba(15,40,80,.10);
+  --shadow-hover:0 18px 50px rgba(15,40,80,.18);
+  --radius:14px;
+  --maxw:1180px;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  color:var(--text);background:var(--white);line-height:1.7;overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit;text-decoration:none}
+.container{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+.ico{width:1em;height:1em;display:inline-block;vertical-align:-.125em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* ===================== 导航 ===================== */
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 5%;
+  background:rgba(0,31,63,.32);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid rgba(255,255,255,.08);
+  transition:padding .35s ease,background .35s ease,box-shadow .35s ease;
+}
+.nav.scrolled{background:rgba(0,51,102,.96);box-shadow:0 6px 24px rgba(0,31,63,.22);padding:11px 5%}
+.nav-logo{display:flex;align-items:center;gap:12px;color:#fff;font-weight:700;font-size:18px}
+.nav-logo .mark{
+  width:36px;height:36px;border-radius:9px;
+  background:#fff;color:var(--uestc);
+  display:grid;place-items:center;font-weight:800;font-size:15px;letter-spacing:-1px;
+}
+.nav-links{display:flex;gap:30px;align-items:center}
+.nav-links a{color:rgba(255,255,255,.82);font-size:15px;font-weight:500;position:relative;transition:color .25s}
+.nav-links a:hover{color:#fff}
+.nav-links a::after{content:"";position:absolute;left:0;bottom:-6px;width:0;height:2px;background:#fff;transition:width .3s}
+.nav-links a:hover::after{width:100%}
+.nav-domain{color:rgba(255,255,255,.55);font-size:13px;font-family:ui-monospace,SFMono-Regular,Consolas,Monaco,monospace}
+.nav-burger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:0;padding:6px}
+.nav-burger span{width:22px;height:2px;background:#fff;transition:.3s;border-radius:2px}
+
+/* ===================== Hero ===================== */
+.hero{
+  min-height:100vh;position:relative;overflow:hidden;
+  display:flex;align-items:center;
+  background:linear-gradient(135deg,#003a73 0%,var(--uestc) 45%,var(--uestc-deep) 100%);
+  color:#fff;
+}
+.particles{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.particle{
+  position:absolute;color:rgba(255,255,255,.13);
+  font-family:ui-monospace,Consolas,Monaco,monospace;font-weight:600;
+  animation:floatUp linear infinite;user-select:none;
+}
+.particle.bubble{border:1.5px solid rgba(255,255,255,.12);border-radius:50%;width:14px;height:14px;color:transparent}
+@keyframes floatUp{
+  0%{transform:translateY(0) rotate(0);opacity:0}
+  10%{opacity:1}90%{opacity:1}
+  100%{transform:translateY(-105vh) rotate(360deg);opacity:0}
+}
+.hero-grid{position:relative;z-index:2;display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;padding:130px 0 90px}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:9px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);
+  padding:7px 16px;border-radius:50px;font-size:13px;color:rgba(255,255,255,.88);
+  margin-bottom:26px;
+}
+.hero-badge .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.hero h1{
+  font-size:clamp(2.3rem,5.4vw,4.2rem);font-weight:800;letter-spacing:1px;
+  line-height:1.12;margin-bottom:18px;
+}
+.hero h1 small{display:block;font-size:.34em;font-weight:400;letter-spacing:3px;color:rgba(255,255,255,.6);margin-top:14px;text-transform:uppercase}
+.hero-sub{font-size:clamp(1rem,2.2vw,1.28rem);color:rgba(255,255,255,.85);font-weight:300;margin-bottom:8px}
+.hero-domain{font-family:ui-monospace,Consolas,Monaco,monospace;color:rgba(255,255,255,.5);font-size:14px;margin-bottom:26px}
+.typewriter{min-height:30px;font-size:17px;color:var(--accent);margin-bottom:36px;font-weight:500}
+.typewriter .cursor{display:inline-block;width:2px;height:1.05em;background:var(--accent);margin-left:3px;vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.hero-cta{display:flex;gap:14px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 30px;border-radius:50px;font-weight:600;font-size:15px;transition:all .3s ease;cursor:pointer;border:none}
+.btn-primary{background:#fff;color:var(--uestc);box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,0,0,.28)}
+.btn-ghost{background:rgba(255,255,255,.08);color:#fff;border:1.5px solid rgba(255,255,255,.38)}
+.btn-ghost:hover{background:rgba(255,255,255,.18);transform:translateY(-3px)}
+
+/* Hero 右侧：社区实时面板 */
+.live-panel{
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);
+  border-radius:20px;padding:24px;backdrop-filter:blur(8px);
+  box-shadow:0 24px 60px rgba(0,10,30,.4);
+}
+.live-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.live-title{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:600;color:#fff}
+.live-title .dot{width:8px;height:8px;border-radius:50%;background:#4ade80;box-shadow:0 0 10px #4ade80;animation:pulse 1.8s infinite}
+.live-count{font-size:12px;color:rgba(255,255,255,.6)}
+.live-count b{color:var(--accent);font-size:15px}
+.feed{display:flex;flex-direction:column;gap:2px}
+.feed-item{display:flex;align-items:center;gap:12px;padding:11px 8px;border-radius:10px;transition:background .25s}
+.feed-item:hover{background:rgba(255,255,255,.06)}
+.feed-item .av{width:30px;height:30px;border-radius:9px;flex-shrink:0;display:grid;place-items:center;color:#fff;font-size:12px;font-weight:700}
+.feed-item .txt{flex:1;min-width:0;font-size:13px;color:rgba(255,255,255,.82)}
+.feed-item .txt b{color:#fff;font-weight:600}
+.feed-item .txt span{color:rgba(255,255,255,.45)}
+.feed-item .t{font-size:11px;color:rgba(255,255,255,.4);flex-shrink:0}
+.live-tags{margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.12);display:flex;flex-wrap:wrap;gap:8px}
+.live-tags .lbl{font-size:12px;color:rgba(255,255,255,.45);width:100%;margin-bottom:4px}
+.live-tags a{font-size:12px;color:rgba(255,255,255,.8);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);padding:5px 12px;border-radius:50px;transition:all .25s}
+.live-tags a:hover{background:rgba(126,224,255,.18);border-color:rgba(126,224,255,.4);color:#fff}
+.scroll-hint{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.45);font-size:12px;animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,8px)}}
+
+/* ===================== 数据条 ===================== */
+.stats{background:var(--uestc-deep);color:#fff;padding:54px 0}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;text-align:center}
+.stat{position:relative}
+.stat:not(:last-child)::after{content:"";position:absolute;right:-12px;top:15%;height:70%;width:1px;background:rgba(255,255,255,.12)}
+.stat .num{font-size:clamp(2rem,4.6vw,3rem);font-weight:800;color:var(--accent);line-height:1;letter-spacing:-1px}
+.stat .label{font-size:13px;color:rgba(255,255,255,.65);margin-top:8px}
+
+/* ===================== 通用 section ===================== */
+.section{padding:92px 0}
+.section.alt{background:var(--gray-bg)}
+.section-head{text-align:center;max-width:680px;margin:0 auto 56px}
+.section-tag{display:inline-block;color:var(--uestc-light);font-size:12px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:12px}
+.section h2{font-size:clamp(1.7rem,3.8vw,2.5rem);color:var(--uestc);font-weight:800;margin-bottom:14px;letter-spacing:.5px}
+.section-desc{color:var(--text-soft);font-size:16px}
+
+/* ===================== 板块卡片 ===================== */
+.boards{display:grid;grid-template-columns:repeat(5,1fr);gap:18px}
+.board{
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:28px 18px;text-align:center;transition:all .35s cubic-bezier(.2,.7,.3,1);
+  cursor:pointer;position:relative;overflow:hidden;
+}
+.board::before{content:"";position:absolute;left:0;top:0;height:3px;width:100%;background:var(--uestc);transform:scaleX(0);transform-origin:left;transition:transform .35s}
+.board:hover{transform:translateY(-8px);box-shadow:var(--shadow-hover);border-color:transparent}
+.board:hover::before{transform:scaleX(1)}
+.board .ico-wrap{width:54px;height:54px;margin:0 auto 16px;border-radius:14px;background:#eaf2fb;display:grid;place-items:center;color:var(--uestc);font-size:26px;transition:all .35s}
+.board:hover .ico-wrap{background:var(--uestc);color:#fff;transform:rotate(-5deg) scale(1.05)}
+.board h3{font-size:17px;color:var(--uestc);margin-bottom:6px;font-weight:700}
+.board p{font-size:12.5px;color:var(--text-soft);min-height:36px;line-height:1.5}
+.board .count{margin-top:12px;font-size:11.5px;color:var(--uestc-light);font-weight:600;font-family:ui-monospace,Consolas,monospace}
+
+/* ===================== BBS 帖子 + 侧栏 ===================== */
+.forum-layout{display:grid;grid-template-columns:1fr 320px;gap:28px;align-items:start}
+.thread-list{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.thread-head{padding:16px 22px;background:var(--uestc);color:#fff;display:flex;justify-content:space-between;align-items:center}
+.thread-head h3{font-size:16px;font-weight:700}
+.thread-head .live{font-size:12px;color:var(--accent);display:flex;align-items:center;gap:6px}
+.thread{display:flex;align-items:center;gap:16px;padding:17px 22px;border-bottom:1px solid var(--gray-2);transition:background .2s}
+.thread:last-child{border-bottom:none}
+.thread:hover{background:var(--gray-bg)}
+.thread .tag{flex-shrink:0;font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;background:#e8f0fb;color:var(--uestc)}
+.thread .tag.hot{background:#fdeaea;color:#c0392b}
+.thread .body{flex:1;min-width:0}
+.thread .title{font-size:14.5px;color:var(--text);font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thread .meta{font-size:12px;color:var(--text-soft)}
+.thread .reply{text-align:center;flex-shrink:0;color:var(--text-soft);min-width:46px}
+.thread .reply b{display:block;font-size:16px;color:var(--uestc)}
+.thread .reply span{font-size:11px}
+.sidebar{display:flex;flex-direction:column;gap:18px}
+.side-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.side-card h4{padding:15px 20px;background:var(--gray-bg);font-size:14px;color:var(--uestc);font-weight:700;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.side-item{display:flex;align-items:center;gap:12px;padding:13px 20px;border-bottom:1px solid var(--gray-2);transition:background .2s}
+.side-item:last-child{border-bottom:none}
+.side-item:hover{background:var(--gray-bg)}
+.side-item .avatar{width:32px;height:32px;border-radius:9px;flex-shrink:0;display:grid;place-items:center;color:#fff;font-size:12px;font-weight:700}
+.side-item .info{flex:1;min-width:0;font-size:13px}
+.side-item .info b{display:block;color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.side-item .info span{color:var(--text-soft);font-size:11px}
+.side-item .badge{font-size:11px;font-weight:700;color:var(--uestc-light)}
+.rank-num{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:12px;font-weight:800;flex-shrink:0;background:var(--silver);color:#fff}
+.rank-num.top{background:linear-gradient(135deg,#ffb347,#ff8c1a)}
+
+/* ===================== 价值观卡片 ===================== */
+.values{display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
+.value{
+  background:#fff;border-radius:var(--radius);padding:34px 26px;text-align:center;
+  border:1px solid var(--line);box-shadow:var(--shadow);transition:all .35s;
+}
+.value:hover{transform:translateY(-7px);box-shadow:var(--shadow-hover)}
+.value .ico-c{width:64px;height:64px;margin:0 auto 18px;border-radius:18px;background:#eaf2fb;display:grid;place-items:center;font-size:30px;color:var(--uestc);transition:all .35s}
+.value:hover .ico-c{background:var(--uestc);color:#fff;transform:translateY(-3px)}
+.value h3{font-size:19px;color:var(--uestc);margin-bottom:9px;font-weight:700}
+.value p{font-size:13.5px;color:var(--text-soft)}
+
+/* ===================== 故事时间轴 ===================== */
+.timeline{position:relative;max-width:740px;margin:0 auto;padding-left:40px}
+.timeline::before{content:"";position:absolute;left:14px;top:0;bottom:0;width:3px;background:var(--silver);transform-origin:top;transform:scaleY(0);transition:transform 1.2s ease}
+.timeline.draw::before{transform:scaleY(1)}
+.tl-item{position:relative;padding:0 0 48px 30px}
+.tl-item:last-child{padding-bottom:0}
+.tl-item::before{content:"";position:absolute;left:-33px;top:4px;width:18px;height:18px;border-radius:50%;background:var(--uestc);border:4px solid var(--white);box-shadow:0 0 0 3px var(--uestc);opacity:0;transition:opacity .4s}
+.timeline.draw .tl-item::before{opacity:1}
+.tl-item .when{font-size:12px;font-weight:700;color:var(--uestc-light);margin-bottom:6px;letter-spacing:1px;text-transform:uppercase}
+.tl-item h3{font-size:19px;color:var(--uestc);margin-bottom:8px;font-weight:700}
+.tl-item p{font-size:15px;color:var(--text-soft)}
+
+/* ===================== IP + 未来展望 ===================== */
+.showcase{display:grid;grid-template-columns:1fr 1.3fr;gap:40px;align-items:center}
+.ip-card{background:linear-gradient(150deg,#003a73,var(--uestc-deep));color:#fff;border-radius:22px;padding:38px 30px;text-align:center;box-shadow:var(--shadow-hover);border:1px solid rgba(255,255,255,.06)}
+.ip-avatar{width:104px;height:104px;margin:0 auto 18px;border-radius:26px;background:rgba(255,255,255,.1);display:grid;place-items:center;border:1px solid rgba(255,255,255,.2);color:var(--accent);font-size:50px}
+.ip-card h3{font-size:23px;font-weight:800;margin-bottom:5px}
+.ip-card .ip-tag{font-size:12px;color:var(--accent);margin-bottom:14px;letter-spacing:1px}
+.ip-card p{font-size:13.5px;color:rgba(255,255,255,.78)}
+.goals{display:flex;flex-direction:column;gap:16px}
+.goal{display:flex;gap:18px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;transition:all .3s}
+.goal:hover{transform:translateX(8px);box-shadow:var(--shadow);border-color:var(--uestc-light)}
+.goal .term{flex-shrink:0;width:62px;text-align:center}
+.goal .term b{display:block;font-size:14px;color:#fff;background:var(--uestc);border-radius:8px;padding:7px 0;font-weight:700}
+.goal .term span{font-size:11px;color:var(--text-soft)}
+.goal .body h4{font-size:16px;color:var(--uestc);margin-bottom:3px;font-weight:700}
+.goal .body p{font-size:13.5px;color:var(--text-soft)}
+
+/* ===================== 页脚 ===================== */
+.footer{background:var(--uestc-deep);color:rgba(255,255,255,.7);padding:58px 0 30px;text-align:center}
+.footer-slogan{font-size:clamp(1.25rem,2.8vw,1.8rem);color:#fff;font-weight:700;margin-bottom:12px;letter-spacing:1px}
+.footer .domain{font-family:ui-monospace,Consolas,Monaco,monospace;color:var(--accent);margin-bottom:24px;font-size:14px}
+.footer-tags{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:30px}
+.footer-tags span{font-size:12.5px;border:1px solid rgba(255,255,255,.18);padding:6px 16px;border-radius:50px}
+.footer-copy{font-size:12px;color:rgba(255,255,255,.4);border-top:1px solid rgba(255,255,255,.1);padding-top:24px;margin-top:10px}
+
+/* ===================== 滚动渐入 ===================== */
+.reveal{opacity:0;transform:translateY(34px);transition:opacity .8s ease,transform .8s ease}
+.reveal.in{opacity:1;transform:none}
+.reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}.reveal.d3{transition-delay:.24s}.reveal.d4{transition-delay:.32s}.reveal.d5{transition-delay:.4s}
+
+/* ===================== 响应式 ===================== */
+@media(max-width:1024px){
+  .hero-grid{grid-template-columns:1fr;gap:40px}
+  .boards{grid-template-columns:repeat(3,1fr)}
+  .values{grid-template-columns:repeat(2,1fr)}
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:30px}
+  .stat:nth-child(2)::after{display:none}
+  .forum-layout{grid-template-columns:1fr}
+  .showcase{grid-template-columns:1fr}
+}
+@media(max-width:768px){
+  .nav-links,.nav-domain{display:none}
+  .nav-burger{display:flex}
+  .nav-links.open{display:flex;flex-direction:column;position:absolute;top:100%;left:0;right:0;background:rgba(0,51,102,.98);padding:22px;gap:16px}
+  .boards{grid-template-columns:repeat(2,1fr)}
+  .values{grid-template-columns:1fr}
+  .section{padding:64px 0}
+  .hero-cta{flex-direction:column;align-items:stretch}
+  .btn{justify-content:center}
+  .goal{flex-direction:column;gap:8px}
+  .goal .term{display:flex;gap:10px;align-items:center;width:auto}
+  .goal .term b{width:auto;padding:6px 12px}
+  .stat:not(:last-child)::after{display:none}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<!-- ===== SVG 图标 sprite（自绘线性图标，统一描边） ===== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-cap" viewBox="0 0 24 24"><path d="M12 4 2 9l10 5 10-5-10-5Z"/><path d="M6 11v4c0 1 2.7 2.5 6 2.5s6-1.5 6-2.5v-4"/><path d="M21 9.5V14"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4v1a3 3 0 0 0 3 3"/><path d="M17 6h3v1a3 3 0 0 1-3 3"/><path d="M12 14v3"/><path d="M9 21h6"/><path d="M9.5 17h5l.5 4h-6l.5-4Z"/></symbol>
+  <symbol id="i-brief" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5.5A2.5 2.5 0 0 1 10.5 3h3A2.5 2.5 0 0 1 16 5.5V7"/><path d="M3 12h18"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5.6 5.6 4.2 4.2M18.4 5.6l1.4-1.4M18.4 18.4l1.4 1.4M5.6 18.4l-1.4 1.4"/></symbol>
+  <symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5c0-3 2.5-5.5 5.5-5.5s5.5 2.5 5.5 5.5"/><path d="M16 5.2a3 3 0 0 1 0 5.6"/><path d="M17.5 14.2c2 .8 3.5 2.8 3.5 5.3"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a4 4 0 0 0 5.7 0l2.8-2.8a4 4 0 0 0-5.7-5.7L11 6.3"/><path d="M14 11a4 4 0 0 0-5.7 0L5.5 13.8a4 4 0 0 0 5.7 5.7L13 17.7"/></symbol>
+  <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v17"/><path d="M6.5 20h11"/><path d="M4.5 7h15"/><path d="M4.5 7 2 12.5a2.5 2.5 0 0 0 5 0L4.5 7Z"/><path d="M19.5 7 17 12.5a2.5 2.5 0 0 0 5 0L19.5 7Z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 5 5.8v5.5c0 4.4 3 7.8 7 9.7 4-1.9 7-5.3 7-9.7V5.8L12 3Z"/><path d="M9 12l2 2 4-4.5"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9.3-8.8A4.6 4.6 0 0 1 12 6.5 4.6 4.6 0 0 1 21.3 11C19 15.6 12 20 12 20Z"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 3c.6 2.8 3.5 4.6 3.5 8A4.5 4.5 0 0 1 7 12c0-1.3.4-2.3 1.1-3.2.3.8.9 1.3 1.7 1.3C9 8 9.8 5.4 12 3Z"/><path d="M12 21a5 5 0 0 0 5-5c0-1.6-.7-2.9-1.7-4"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4V5Z"/><path d="M8 9h8M8 12h5"/></symbol>
+</svg>
+
+<!-- ============ 导航 ============ -->
+<nav class="nav" id="nav">
+  <a href="#hero" class="nav-logo">
+    <span class="mark">电W</span>
+    <span>成电Wiki论坛</span>
+  </a>
+  <div class="nav-links" id="navLinks">
+    <a href="#hero">首页</a>
+    <a href="#boards">板块</a>
+    <a href="#values">理念</a>
+    <a href="#story">故事</a>
+    <a href="#future">展望</a>
+    <span class="nav-domain">wiki.bbs.uestc.net</span>
+  </div>
+  <button class="nav-burger" id="burger" aria-label="菜单"><span></span><span></span><span></span></button>
+</nav>
+
+<!-- ============ Hero ============ -->
+<header class="hero" id="hero">
+  <div class="particles" id="particles"></div>
+  <div class="container">
+    <div class="hero-grid">
+      <!-- 左：品牌 -->
+      <div class="hero-left">
+        <div class="hero-badge"><span class="dot"></span> 成电学子专属 · 轻实名 · 开源互助</div>
+        <h1>成电Wiki论坛<small>wiki · bbs · uestc · net</small></h1>
+        <p class="hero-sub">成电学子专属成长互助开源社区</p>
+        <p class="hero-domain">wiki.bbs.uestc.net</p>
+        <div class="typewriter" id="typer"><span class="cursor">&nbsp;</span></div>
+        <div class="hero-cta">
+          <a href="#boards" class="btn btn-primary">进入论坛 <svg class="ico"><use href="#i-chat"/></svg></a>
+          <a href="#story" class="btn btn-ghost">了解我们</a>
+        </div>
+      </div>
+      <!-- 右：社区实时面板 -->
+      <div class="hero-right">
+        <div class="live-panel reveal">
+          <div class="live-head">
+            <div class="live-title"><span class="dot"></span> 社区实时动态</div>
+            <div class="live-count"><b>1,284</b> 成电人在线</div>
+          </div>
+          <div class="feed">
+            <div class="feed-item">
+              <span class="av" style="background:#1e6bb8">芯</span>
+              <div class="txt"><b>芯片打工人</b> 在 <span>职业</span> 发布了面经 · <span>华为2012实验室</span></div>
+              <span class="t">刚刚</span>
+            </div>
+            <div class="feed-item">
+              <span class="av" style="background:#c0392b">学</span>
+              <div class="txt"><b>成电老学长</b> 回复了 <span>保研避坑指南</span></div>
+              <span class="t">2 分钟</span>
+            </div>
+            <div class="feed-item">
+              <span class="av" style="background:#27ae60">码</span>
+              <div class="txt"><b>三年磨一剑</b> 更新了 <span>大厂实习攻略</span></div>
+              <span class="t">5 分钟</span>
+            </div>
+            <div class="feed-item">
+              <span class="av" style="background:#8e44ad">数</span>
+              <div class="txt"><b>数模选手</b> 在 <span>竞赛</span> 发起组队</div>
+              <span class="t">8 分钟</span>
+            </div>
+            <div class="feed-item">
+              <span class="av" style="background:#d97706">吃</span>
+              <div class="txt"><b>吃货学长</b> 收藏了 <span>清水河美食地图</span></div>
+              <span class="t">12 分钟</span>
+            </div>
+          </div>
+          <div class="live-tags">
+            <span class="lbl">实时热搜</span>
+            <a>#保研经验</a><a>#秋招面经</a><a>#电赛组队</a><a>#清水河生活</a><a>#校友内推</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-hint">向下滚动探索 ↓</div>
+</header>
+
+<!-- ============ 数据条 ============ -->
+<section class="stats">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat"><div class="num" data-target="80" data-suffix="%">0</div><div class="label">目标在校生覆盖</div></div>
+      <div class="stat"><div class="num" data-target="5000" data-suffix="+">0</div><div class="label">活跃校友入驻</div></div>
+      <div class="stat"><div class="num" data-target="5" data-suffix="">0</div><div class="label">核心资源板块</div></div>
+      <div class="stat"><div class="num" data-target="7" data-suffix="">0</div><div class="label">创立者人数</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BBS 板块 ============ -->
+<section class="section" id="boards">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="section-tag">CORE BOARDS</span>
+      <h2>五大板块 · 全链路成长</h2>
+      <p class="section-desc">从课堂到职场，从迷茫到坚定。每一个板块，都是成电人互助成长的起点。</p>
+    </div>
+    <div class="boards">
+      <div class="board reveal d1"><div class="ico-wrap"><svg class="ico"><use href="#i-cap"/></svg></div><h3>升学</h3><p>考研 · 保研 · 出国，前辈真实经验</p><div class="count">2,340 帖</div></div>
+      <div class="board reveal d2"><div class="ico-wrap"><svg class="ico"><use href="#i-trophy"/></svg></div><h3>竞赛</h3><p>电赛 · 数模 · ACM，组队与攻略</p><div class="count">1,580 帖</div></div>
+      <div class="board reveal d3"><div class="ico-wrap"><svg class="ico"><use href="#i-brief"/></svg></div><h3>职业</h3><p>校招 · 实习 · 内推，打破信息差</p><div class="count">3,120 帖</div></div>
+      <div class="board reveal d4"><div class="ico-wrap"><svg class="ico"><use href="#i-sun"/></svg></div><h3>生活</h3><p>校园 · 生活 · 兴趣，烟火成电</p><div class="count">4,670 帖</div></div>
+      <div class="board reveal d5"><div class="ico-wrap"><svg class="ico"><use href="#i-people"/></svg></div><h3>校友专区</h3><p>毕业校友 · 行业前辈，跨阶段交流</p><div class="count">1,890 帖</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BBS 首页模拟 ============ -->
+<section class="section alt">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="section-tag">HOT DISCUSSIONS</span>
+      <h2>热门讨论 · 此刻正在发生</h2>
+      <p class="section-desc">无广告、无营销、无焦虑 —— 只有真实经验与温暖互助。</p>
+    </div>
+    <div class="forum-layout">
+      <div class="thread-list reveal">
+        <div class="thread-head">
+          <h3>最新热帖</h3>
+          <span class="live"><span style="width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block;animation:pulse 1.5s infinite"></span> 实时更新</span>
+        </div>
+        <div class="thread"><span class="tag hot">置顶</span><div class="body"><div class="title">【干货】2026成电保研全流程避坑指南，附各学院往年数据</div><div class="meta">@成电老学长 · 校友专区 · 12 分钟前</div></div><div class="reply"><b>328</b><span>回复</span></div></div>
+        <div class="thread"><span class="tag">职业</span><div class="body"><div class="title">秋招上岸｜华为2012实验室芯片岗面经分享，4轮全记录</div><div class="meta">@芯片打工人 · 2 小时前</div></div><div class="reply"><b>156</b><span>回复</span></div></div>
+        <div class="thread"><span class="tag">升学</span><div class="body"><div class="title">考研复试被刷后我做了什么｜写给正在焦虑的你</div><div class="meta">@清风明月 · 5 小时前</div></div><div class="reply"><b>243</b><span>回复</span></div></div>
+        <div class="thread"><span class="tag">竞赛</span><div class="body"><div class="title">2026数模国赛成电组队贴｜缺一个建模一个写手</div><div class="meta">@数模选手 · 今天</div></div><div class="reply"><b>87</b><span>回复</span></div></div>
+        <div class="thread"><span class="tag">生活</span><div class="body"><div class="title">清水河周边美食地图（在校生+校友持续更新版）</div><div class="meta">@吃货学长 · 昨天</div></div><div class="reply"><b>412</b><span>回复</span></div></div>
+        <div class="thread"><span class="tag">职业</span><div class="body"><div class="title">在校生如何拿到第一份大厂实习？附我的简历模板</div><div class="meta">@三年磨一剑 · 2 天前</div></div><div class="reply"><b>198</b><span>回复</span></div></div>
+        <div class="thread"><span class="tag">校友</span><div class="body"><div class="title">毕业5年回望｜成电教给我的，远不止一张文凭</div><div class="meta">@过来人 · 3 天前</div></div><div class="reply"><b>305</b><span>回复</span></div></div>
+      </div>
+      <aside class="sidebar">
+        <div class="side-card reveal d1">
+          <h4><svg class="ico"><use href="#i-flame"/></svg> 本周热榜</h4>
+          <div class="side-item"><span class="rank-num top">1</span><div class="info"><b>保研避坑指南</b><span>升学 · 328 回复</span></div></div>
+          <div class="side-item"><span class="rank-num top">2</span><div class="info"><b>美食地图持续更新</b><span>生活 · 412 回复</span></div></div>
+          <div class="side-item"><span class="rank-num top">3</span><div class="info"><b>毕业5年回望</b><span>校友 · 305 回复</span></div></div>
+          <div class="side-item"><span class="rank-num">4</span><div class="info"><b>考研复试经验</b><span>升学 · 243 回复</span></div></div>
+          <div class="side-item"><span class="rank-num">5</span><div class="info"><b>大厂实习攻略</b><span>职业 · 198 回复</span></div></div>
+        </div>
+        <div class="side-card reveal d2">
+          <h4><svg class="ico"><use href="#i-people"/></svg> 活跃校友</h4>
+          <div class="side-item"><span class="avatar" style="background:#1e6bb8">芯</span><div class="info"><b>芯片打工人</b><span>半导体 · 毕业3年</span></div><span class="badge">分享中</span></div>
+          <div class="side-item"><span class="avatar" style="background:#c0392b">学</span><div class="info"><b>成电老学长</b><span>升学导师 · 毕业8年</span></div><span class="badge">在线</span></div>
+          <div class="side-item"><span class="avatar" style="background:#27ae60">码</span><div class="info"><b>三年磨一剑</b><span>互联网 · 毕业2年</span></div><span class="badge">在线</span></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 价值观 ============ -->
+<section class="section" id="values">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="section-tag">OUR VALUES</span>
+      <h2>四个理念 · 一种默契</h2>
+      <p class="section-desc">打破信息壁垒，连接成电人，共建纯粹、干净、高信噪比的成长空间。</p>
+    </div>
+    <div class="values">
+      <div class="value reveal d1"><div class="ico-c"><svg class="ico"><use href="#i-link"/></svg></div><h3>资源互助</h3><p>共享升学、竞赛、职业、生活资源，一人分享，全员受益。</p></div>
+      <div class="value reveal d2"><div class="ico-c"><svg class="ico"><use href="#i-scale"/></svg></div><h3>平等开放</h3><p>无身份、年级、层级差异，在校生与校友平等交流。</p></div>
+      <div class="value reveal d3"><div class="ico-c"><svg class="ico"><use href="#i-shield"/></svg></div><h3>真诚分享</h3><p>拒绝营销焦虑、虚假信息，传递真实经验与实用干货。</p></div>
+      <div class="value reveal d4"><div class="ico-c"><svg class="ico"><use href="#i-heart"/></svg></div><h3>温暖陪伴</h3><p>从迷茫到坚定，每一位成电人都能找到归属与回响。</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 品牌故事 ============ -->
+<section class="section alt" id="story">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="section-tag">OUR STORY</span>
+      <h2>我们为何而来</h2>
+      <p class="section-desc">成电从不缺优秀的前辈，缺的是一个纯粹、干净的交流空间。</p>
+    </div>
+    <div class="timeline" id="timeline">
+      <div class="tl-item reveal"><div class="when">起点</div><h3>7名成电学子的初心</h3><p>他们曾在升学路上迷茫、在职场入门时手足无措，被营销号贩卖焦虑、被付费咨询收割信息差。于是，他们决定自己搭一个平台。</p></div>
+      <div class="tl-item reveal"><div class="when">第一步</div><h3>打破信息壁垒</h3><p>校内论坛封闭、校外社区杂乱。他们连接在校学子与毕业校友，填补校内论坛封闭、校外社区杂乱的空白。</p></div>
+      <div class="tl-item reveal"><div class="when">第二步</div><h3>轻实名 · 高可信</h3><p>用学校/公司邮箱、学信网验证过滤虚假信息，让信息质量远高于匿名社区，社区氛围友好、无网络暴力。</p></div>
+      <div class="tl-item reveal"><div class="when">第三步</div><h3>开源共建</h3><p>学子自发运营、校友共同维护，内容贴合成电实际。这里没有套路，只有干货；没有隔阂，只有伙伴。</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ IP + 未来展望 ============ -->
+<section class="section" id="future">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="section-tag">LOOKING AHEAD</span>
+      <h2>从校园到职场 · 终身伙伴</h2>
+      <p class="section-desc">成为成电人代代相传、携手成长的精神家园。</p>
+    </div>
+    <div class="showcase">
+      <div class="ip-card reveal d1">
+        <div class="ip-avatar"><svg class="ico"><use href="#i-cap"/></svg></div>
+        <h3>电小Wiki</h3>
+        <div class="ip-tag">平台 IP · 成长小伙伴</div>
+        <p>头戴学士帽，融合电路板与校徽元素。热情开朗、乐于助人、理性靠谱 —— 像一位靠谱的成电学长，耐心解答，温暖陪伴。</p>
+      </div>
+      <div class="goals">
+        <div class="goal reveal d2"><div class="term"><b>1年</b><span>短期</span></div><div class="body"><h4>覆盖校内，校友入驻</h4><p>覆盖 80%+ 在校生成电学子，吸引 5000+ 活跃校友入驻，搭建完善的资源交流板块。</p></div></div>
+        <div class="goal reveal d3"><div class="term"><b>3年</b><span>中期</span></div><div class="body"><h4>核心交流平台</h4><p>成为成电校友圈公认的核心交流平台，形成成熟的内容生态与互助机制。</p></div></div>
+        <div class="goal reveal d4"><div class="term"><b>5年</b><span>长期</span></div><div class="body"><h4>高校开源社区标杆</h4><p>输出成电互助文化，辐射更多高校学子，让真诚分享、互助共赢影响更多人。</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 页脚 ============ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-slogan">连接每一位成电人，互助成长</div>
+    <div class="domain">wiki.bbs.uestc.net</div>
+    <div class="footer-tags">
+      <span>资源互助</span><span>平等开放</span><span>真诚分享</span><span>温暖陪伴</span>
+    </div>
+    <div class="footer-copy">
+      © 成电Wiki论坛 · 电子科技大学学子专属成长互助开源社区 · 本页为演示 Demo
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  /* 导航：滚动变实色 + 汉堡 */
+  var nav = document.getElementById('nav');
+  var burger = document.getElementById('burger');
+  var navLinks = document.getElementById('navLinks');
+  window.addEventListener('scroll', function(){ nav.classList.toggle('scrolled', window.scrollY > 40); }, {passive:true});
+  burger.addEventListener('click', function(){ navLinks.classList.toggle('open'); });
+  navLinks.querySelectorAll('a').forEach(function(a){ a.addEventListener('click', function(){ navLinks.classList.remove('open'); }); });
+
+  /* Hero 粒子（代码符号 + 气泡） */
+  var pc = document.getElementById('particles');
+  var symbols = ['</>','{ }','( )','[ ]','=>','&&','++','01','#','//','!='];
+  var COUNT = window.innerWidth < 768 ? 12 : 24;
+  for (var i=0;i<COUNT;i++){
+    var el = document.createElement('div');
+    var isBubble = Math.random() < 0.22;
+    el.className = 'particle' + (isBubble ? ' bubble' : '');
+    if(!isBubble) el.textContent = symbols[Math.floor(Math.random()*symbols.length)];
+    el.style.left = Math.random()*100 + '%';
+    el.style.bottom = '-40px';
+    var dur = 14 + Math.random()*16;
+    el.style.animationDuration = dur + 's';
+    el.style.animationDelay = (-Math.random()*dur) + 's';
+    if(!isBubble) el.style.fontSize = (12 + Math.random()*20) + 'px';
+    pc.appendChild(el);
+  }
+
+  /* 打字机广告语 */
+  var slogans = [
+    '打破信息差，成电人互助成长。',
+    '纯粹分享，真诚互助，成电人的成长家园。',
+    '这里没有套路，只有干货；没有隔阂，只有伙伴。'
+  ];
+  var typer = document.getElementById('typer');
+  var cursor = '<span class="cursor">&nbsp;</span>';
+  var si = 0, ci = 0, deleting = false;
+  function tick(){
+    var word = slogans[si];
+    if(!deleting){
+      ci++; typer.innerHTML = word.slice(0,ci) + cursor;
+      if(ci === word.length){ deleting = true; return setTimeout(tick, 2200); }
+      return setTimeout(tick, 70 + Math.random()*40);
+    } else {
+      ci--; typer.innerHTML = word.slice(0,ci) + cursor;
+      if(ci === 0){ deleting = false; si = (si+1) % slogans.length; return setTimeout(tick, 400); }
+      return setTimeout(tick, 35);
+    }
+  }
+  tick();
+
+  /* 滚动渐入 */
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, {threshold:0.15});
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+
+  /* 时间轴绘制 */
+  var tl = document.getElementById('timeline');
+  if(tl){
+    var tlio = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ if(e.isIntersecting){ tl.classList.add('draw'); tlio.unobserve(tl); } });
+    }, {threshold:0.2});
+    tlio.observe(tl);
+  }
+
+  /* 数字滚动 */
+  function animateNum(el){
+    var target = parseInt(el.getAttribute('data-target'),10);
+    var suffix = el.getAttribute('data-suffix') || '';
+    var t0 = null, dur = 1600;
+    function step(ts){
+      if(!t0) t0 = ts;
+      var p = Math.min((ts - t0)/dur, 1);
+      var eased = 1 - Math.pow(1-p, 3);
+      el.textContent = Math.floor(eased * target).toLocaleString() + suffix;
+      if(p < 1) requestAnimationFrame(step);
+      else el.textContent = target.toLocaleString() + suffix;
+    }
+    requestAnimationFrame(step);
+  }
+  var numIO = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ if(e.isIntersecting){ animateNum(e.target); numIO.unobserve(e.target); } });
+  }, {threshold:0.5});
+  document.querySelectorAll('.stat .num').forEach(function(el){ numIO.observe(el); });
+})();
+</script>
+</body>
+</html>
