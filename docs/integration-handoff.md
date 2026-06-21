@@ -56,14 +56,14 @@ Hermes gateway 会扫描最终回复中的 `MEDIA:/absolute/path/file.ext`，自
 
 由于移动端无法可靠处理 ZIP，漫画交付必须是 PDF，不允许回传 ZIP：
 
-1. `download_album(album_id=...)`
-2. `post_process(album_id=..., process_type="img2pdf", params={"level":"album","filename_rule":"Atitle","dir_rule":{"rule":"Bd/{Atitle}.pdf","base_dir":"/tmp/monitor_charts/jmcomic"}})`
-3. 最终回复为 `output_paths` 中的**每个**文件写入 `MEDIA:/tmp/monitor_charts/jmcomic/<title>.pdf`（页数过多时会拆分为 `<title>_part01.pdf`、`<title>_part02.pdf` 等）
-4. 若 PDF 失败，报告失败原因并停止，不回传 ZIP
+1. `download_album(album_id=...)`，自定义 Feature 在 `after_album` 使用同一个 album 对象建立清单并生成 PDF。
+2. 仅当下载返回 `partial`、超时或缺少 `output_paths` 时调用 `post_process(album_id=..., process_type="img2pdf")` 重扫磁盘；即使传入 `zip` 也会强制走同一 PDF 管线。
+3. 结果必须满足 `valid_images == expected_images == pdf_pages`，空文件和损坏文件均为 0；否则不生成附件。
+4. 最终回复为 `output_paths` 中的每个文件写入 `MEDIA:/tmp/monitor_charts/jmcomic/<title>_第001-020話.pdf`。若 PDF 失败或不完整，报告原因并停止，不回传 ZIP。
 
 关键限制：`MEDIA:` 必须指向实际文件，不能指向目录；路径必须是服务器上的绝对路径，且要位于 Hermes 允许上传目录内。当前服务器 `HERMES_MEDIA_ALLOW_DIRS=/tmp/monitor_charts`，jmcomic 输出目录已设为 `/tmp/monitor_charts/jmcomic`。
 
-服务器使用仓库内 `hermes/scripts/jmai_pdf_mcp.py` 作为 MCP 启动 wrapper。该 wrapper 会把任何 `post_process(zip)` 请求强制转换成移动端 PDF 生成：从已下载图片重新压缩为 JPEG（默认最大边 1800、质量 72）后合成 PDF，避免模型误调 ZIP，也避免原尺寸 `img2pdf` 生成过大的 PDF 导致飞书上传失败。由于飞书单文件消息硬限制为 30 MB，wrapper 会按预估体积自动把长漫画拆成多个不超过 28 MB 的 PDF 分卷，`post_process` 返回的 `output_paths` 包含所有分卷路径。
+服务器使用仓库内 `hermes/scripts/jmai_pdf_mcp.py` 作为 MCP 启动 wrapper。它通过 `JmOption.download_album(..., extra=ValidatedMobilePdfFeature)` 接入上游 Feature 生命周期，不再依赖 `post_process` 重建下载元数据。管线强制 `Bd / JM{Aid}-{Pid}` 唯一目录，按 `page_arr` 文件名递归验证 jpg/jpeg/png/webp/gif/bmp/tif/tiff，并持久化到 `/root/.hermes/state/jmcomic/<album_id>/manifest.json`；章节 ID 序列未变化时可直接复用缓存元数据重扫磁盘。完整后按 API 章节边界规划分卷、固定 150 DPI 流式写入 PDF，极窄图片会补白到最小 8 px，最后用 `pypdf` 精确核对页数。根据飞书实测限制采用 18 MB 安全线，而不是原来的 28 MB。
 
 ---
 
@@ -87,17 +87,18 @@ Hermes gateway 会扫描最终回复中的 `MEDIA:/absolute/path/file.ext`，自
 
 1. **检索** — 先用 `search_album(keyword=...)` 或 `browse_albums(time_range=, order_by=)` 拿到候选列表（返回 `{albums, total_count}`，支持翻页）。
 2. **核实** — 对候选结果调用 `get_album_detail(album_id=...)` 确认标题、作者、章节等信息。
-3. **下载** — 确认后再调用 `download_album(album_id=...)`（整本）或 `download_photo(photo_id=...)`（单章）。这是阻塞操作，会实时回报进度。
-4. **整理成 PDF** — 下载完成后必须调用 `post_process(album_id=, process_type="img2pdf", params={"level":"album","filename_rule":"Atitle","dir_rule":{"rule":"Bd/{Atitle}.pdf","base_dir":"/tmp/monitor_charts/jmcomic"}})` 生成 PDF。
-5. **发回飞书** — `post_process` 会返回 `output_paths`（PDF 文件路径列表）。在最终回复中为 `output_paths` 里的**每个**路径都附上一行 `MEDIA:/absolute/path/to/file.pdf`。飞书 gateway 会自动上传这些路径并作为文件附件发送；不要只口头报告服务器路径。服务器当前允许上传目录为 `/tmp/monitor_charts`，jmcomic 输出应位于 `/tmp/monitor_charts/jmcomic` 下。由于飞书单文件消息硬限制为 30 MB，页数较多的漫画会被自动拆分成多个不超过约 28 MB 的 PDF 分卷。
-6. **汇报** — 简要说明标题、ID、以及所有 PDF 文件路径（分卷时会生成 `标题_part01.pdf`、`标题_part02.pdf` 等）。若 PDF 生成失败，报告失败原因并停止，不要回传 ZIP。
+3. **下载并校验** — 调用 `download_album(album_id=...)`；只有磁盘清单逐章精确匹配 API 预期页数时才允许 `success`。
+4. **断点修复** — `partial` 或超时后先用 `post_process(album_id=..., process_type="img2pdf")` 重扫，再按 `missing_chapter_ids` 调用 `download_photo`。最多 5 轮，退避 15/30/60 秒，连续两轮无进展停止。
+5. **生成 PDF** — 完整清单自动按章节边界生成 18 MB 以内分卷，并验证 PDF 总页数；`post_process` 仅作恢复入口。
+6. **发回飞书** — 仅对 `success.output_paths` 中的 PDF 输出 `MEDIA:`，不得发送 ZIP、部分 PDF 或目录。
+7. **汇报** — 说明 `valid_images/expected_images`、PDF 页数及分卷数；未完整时明确报告缺章。
 
 ### 行为约束
 
 - 检索结果可能为空或受限：如实反馈 `total_count`，不编造作品信息。
 - `download_*` 是阻塞长任务，调用前向用户确认目标 ID，避免误下载。
 - 下载路径由 `~/.jmcomic/option.yml` 的 `dir_rule.base_dir` 决定；如需改路径，用 `update_option` 而非手动改文件。
-- `MEDIA:` 必须指向实际 PDF 文件而不是目录或 ZIP；文件路径使用服务器上的绝对路径，且必须位于 `HERMES_MEDIA_ALLOW_DIRS` 允许目录内。页数过多时会产生多个 PDF 分卷，需为每个分卷分别提供 `MEDIA:` 行。当前服务器已将 `~/.jmcomic/option.yml` 的 `dir_rule.base_dir` 设为 `/tmp/monitor_charts/jmcomic`，并通过 PDF-only MCP wrapper 禁止 ZIP 后处理回传。
+- `MEDIA:` 必须指向经过清单和页数双重校验的 PDF；路径必须位于 `HERMES_MEDIA_ALLOW_DIRS`，每卷采用 18 MB 安全线。
 - 遵守平台与当地法规，仅处理用户明确请求且合法的内容。
 ```
 
@@ -113,7 +114,7 @@ SSH 密钥：`C:\Users\Qoobeewang\Desktop\qoobeeHermes\hermesqoobee.pem`
 ### 3.1 安装 jmcomic-ai 和 mcp SDK
 
 ```bash
-ssh -i "C:/Users/Qoobeewang/Desktop/qoobeeHermes/hermesqoobee.pem" -o StrictHostKeyChecking=no root@43.156.230.108 "python3 -m pip install --upgrade pip && python3 -m pip install 'jmcomic-ai>=0.0.9' mcp img2pdf"
+ssh -i "C:/Users/Qoobeewang/Desktop/qoobeeHermes/hermesqoobee.pem" -o StrictHostKeyChecking=no root@43.156.230.108 "python3 -m pip install --upgrade pip && python3 -m pip install 'jmcomic-ai>=0.0.9' 'jmcomic>=2.6.19' mcp img2pdf pypdf"
 ```
 
 安装后验证：
@@ -132,7 +133,15 @@ ssh -i "C:/Users/Qoobeewang/Desktop/qoobeeHermes/hermesqoobee.pem" -o StrictHost
 ssh -i "C:/Users/Qoobeewang/Desktop/qoobeeHermes/hermesqoobee.pem" -o StrictHostKeyChecking=no root@43.156.230.108 "jmai option show || true; ls -la /root/.jmcomic/option.yml"
 ```
 
-如需自定义下载目录，编辑 `option.yml` 的 `dir_rule.base_dir`。为了让飞书 `MEDIA:` 附件回传通过安全过滤，当前建议值是 `/tmp/monitor_charts/jmcomic`：
+如需自定义下载目录，编辑 `option.yml` 的 `dir_rule`。输出必须位于飞书允许目录，且规则必须包含 `Pid`，否则同名章节会互相覆盖：
+
+```yaml
+dir_rule:
+  base_dir: /tmp/monitor_charts/jmcomic
+  rule: 'Bd / JM{Aid}-{Pid}'
+```
+
+编辑命令：
 
 ```bash
 ssh -i "C:/Users/Qoobeewang/Desktop/qoobeeHermes/hermesqoobee.pem" -o StrictHostKeyChecking=no root@43.156.230.108 "jmai option edit"
@@ -292,9 +301,9 @@ git push
 | Hermes MCP 手册 | 仓库内 `hermes/skills/mcp/native-mcp/SKILL.md` |
 | jmcomic-ai 配置 | `/root/.jmcomic/option.yml`（首运行自动生成） |
 | jmcomic 输出目录 | `/tmp/monitor_charts/jmcomic`（位于 `HERMES_MEDIA_ALLOW_DIRS=/tmp/monitor_charts` 下，可被飞书 `MEDIA:` 上传） |
-| PDF 依赖 | `img2pdf`（已安装；缺失时 `post_process(img2pdf)` 会失败并诱发 ZIP 回退） |
-| PDF 体积上限 | 默认 `JMCOMIC_PDF_MAX_SIZE_MB=28`（飞书硬限制 30 MB，留 2 MB 安全余量） |
-| PDF-only wrapper | `/root/.hermes/scripts/jmai_pdf_mcp.py`（仓库源文件：`hermes/scripts/jmai_pdf_mcp.py`；生成移动端压缩 PDF，自动拆分超过 28 MB 的专辑） |
+| PDF 依赖 | `img2pdf`（流式写入）和 `pypdf`（精确页数校验） |
+| PDF 体积上限 | 默认 `JMCOMIC_PDF_MAX_SIZE_MB=18`（依据实际上传稳定性保留安全余量） |
+| PDF-only wrapper | `/root/.hermes/scripts/jmai_pdf_mcp.py`（仓库源文件：`hermes/scripts/jmai_pdf_mcp.py`；Feature 清单校验、移动端 PDF、18 MB 分卷） |
 | 服务器 Python | 3.11.6，命令名 `python3`（无 `python`），`pip3` 可用 |
 | 服务器缺失包 | `mcp`、`jmcomic-ai`（都需 pip 安装）；`uvx`/`jmai` 未装 |
 | MCP server 启动 | `/usr/bin/python3 /root/.hermes/scripts/jmai_pdf_mcp.py`（stdio 传输，强制 PDF） |
